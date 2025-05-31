@@ -20,52 +20,130 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        title: const Text('PeerChat'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          // Connection status
-          Obx(
-            () => Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: chatController.isConnected.value ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: chatController.isConnected.value ? Colors.green : Colors.orange, width: 1),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(color: chatController.isConnected.value ? Colors.green : Colors.orange, shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    chatController.isConnected.value ? 'Online' : 'Offline',
-                    style: TextStyle(
-                      color: chatController.isConnected.value ? Colors.green.shade700 : Colors.orange.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(120),
+        child: AppBar(
+          backgroundColor: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+              boxShadow: [
+                BoxShadow(color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  children: [
+                    // Top row with title and actions
+                    Row(
+                      children: [
+                        Text('PeerChat', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+                        const Spacer(),
+                        // Connection status
+                        Obx(
+                          () => Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: chatController.isConnected.value ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: chatController.isConnected.value ? Colors.green : Colors.orange, width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: chatController.isConnected.value ? Colors.green : Colors.orange,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  chatController.isConnected.value ? 'Online' : 'Offline',
+                                  style: TextStyle(
+                                    color: chatController.isConnected.value ? Colors.green.shade700 : Colors.orange.shade700,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Settings button
+                        IconButton(
+                          onPressed: () => Get.to(() => const SettingsScreen()),
+                          icon: Icon(Icons.settings, color: colorScheme.onSurface, size: 20),
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    // User info and stats row
+                    Obx(
+                      () => Row(
+                        children: [
+                          // Current user info
+                          UserAvatar(user: chatController.currentUser.value, size: 36, showOnlineIndicator: true),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        chatController.currentUser.value?.name ?? 'Guest',
+                                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(10)),
+                                      child: Text(
+                                        'You',
+                                        style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.w600, fontSize: 10),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  'Host • P2P Network',
+                                  style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Quick stats
+                          Row(
+                            children: [
+                              _buildQuickStat(context, Icons.people, '${chatController.onlineUsersCount}'),
+                              const SizedBox(width: 16),
+                              _buildQuickStat(context, Icons.message, '${chatController.messages.length}'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-
-          // Settings button
-          IconButton(onPressed: () => Get.to(() => const SettingsScreen()), icon: Icon(Icons.settings, color: colorScheme.onSurface)),
-        ],
+        ),
       ),
       body: Column(
         children: [
-          // Header section
-          _buildHeaderSection(context, chatController),
-
           // Online users section
           Expanded(child: Obx(() => _buildOnlineUsersSection(context, chatController))),
 
@@ -76,83 +154,16 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderSection(BuildContext context, ChatController chatController) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5)),
-          BoxShadow(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white, blurRadius: 10, offset: const Offset(0, -5)),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Current user info
-          Obx(
-            () => Row(
-              children: [
-                UserAvatar(user: chatController.currentUser.value, size: 50, showOnlineIndicator: true),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        chatController.currentUser.value?.name ?? 'Guest',
-                        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Host', // TODO: Implement host detection
-                        style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(15)),
-                  child: Text('You', style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Network info
-          Obx(
-            () => Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildInfoCard(context, Icons.people, 'Users', '${chatController.onlineUsersCount}'),
-                _buildInfoCard(context, Icons.message, 'Messages', '${chatController.messages.length}'),
-                _buildInfoCard(context, Icons.wifi, 'Network', 'P2P'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(BuildContext context, IconData icon, String label, String value) {
+  Widget _buildQuickStat(BuildContext context, IconData icon, String value) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Column(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: colorScheme.primary, size: 24),
-        const SizedBox(height: 4),
-        Text(value, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        Text(label, style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+        Icon(icon, color: colorScheme.primary, size: 16),
+        const SizedBox(width: 4),
+        Text(value, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
       ],
     );
   }
