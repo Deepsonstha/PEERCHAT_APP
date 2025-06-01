@@ -8,117 +8,193 @@ class LocalStorageService {
   static const String _usersBoxName = 'users';
   static const String _settingsBoxName = 'settings';
 
-  late Box<ChatMessage> _messagesBox;
-  late Box<User> _usersBox;
-  late Box _settingsBox;
+  Box<ChatMessage>? _messagesBox;
+  Box<User>? _usersBox;
+  Box? _settingsBox;
+
+  bool _isInitialized = false;
 
   /// Initialize Hive and open boxes
   Future<void> init() async {
-    await Hive.initFlutter();
+    if (_isInitialized) return;
 
-    // Register adapters
-    if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(ChatMessageAdapter());
-    }
-    if (!Hive.isAdapterRegistered(1)) {
-      Hive.registerAdapter(MessageTypeAdapter());
-    }
-    if (!Hive.isAdapterRegistered(2)) {
-      Hive.registerAdapter(MessageStatusAdapter());
-    }
-    if (!Hive.isAdapterRegistered(3)) {
-      Hive.registerAdapter(UserAdapter());
-    }
+    try {
+      print('Initializing LocalStorageService...');
 
-    // Open boxes
-    _messagesBox = await Hive.openBox<ChatMessage>(_messagesBoxName);
-    _usersBox = await Hive.openBox<User>(_usersBoxName);
-    _settingsBox = await Hive.openBox(_settingsBoxName);
+      // Check if boxes are already open, if not open them
+      if (!Hive.isBoxOpen(_messagesBoxName)) {
+        _messagesBox = await Hive.openBox<ChatMessage>(_messagesBoxName);
+      } else {
+        _messagesBox = Hive.box<ChatMessage>(_messagesBoxName);
+      }
+
+      if (!Hive.isBoxOpen(_usersBoxName)) {
+        _usersBox = await Hive.openBox<User>(_usersBoxName);
+      } else {
+        _usersBox = Hive.box<User>(_usersBoxName);
+      }
+
+      if (!Hive.isBoxOpen(_settingsBoxName)) {
+        _settingsBox = await Hive.openBox(_settingsBoxName);
+      } else {
+        _settingsBox = Hive.box(_settingsBoxName);
+      }
+
+      _isInitialized = true;
+      print('LocalStorageService initialized successfully');
+    } catch (e) {
+      print('Error initializing LocalStorageService: $e');
+      rethrow;
+    }
   }
 
   /// Messages operations
   Future<void> saveMessage(ChatMessage message) async {
-    await _messagesBox.put(message.id, message);
+    if (!_isInitialized) await init();
+    await _messagesBox!.put(message.id, message);
   }
 
   Future<void> saveMessages(List<ChatMessage> messages) async {
+    if (!_isInitialized) await init();
     final Map<String, ChatMessage> messageMap = {for (var message in messages) message.id: message};
-    await _messagesBox.putAll(messageMap);
+    await _messagesBox!.putAll(messageMap);
   }
 
   List<ChatMessage> getAllMessages() {
-    return _messagesBox.values.toList()..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    if (!_isInitialized || _messagesBox == null) return [];
+    try {
+      return _messagesBox!.values.toList()..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    } catch (e) {
+      print('Error getting all messages: $e');
+      return [];
+    }
   }
 
   ChatMessage? getMessage(String id) {
-    return _messagesBox.get(id);
+    if (!_isInitialized || _messagesBox == null) return null;
+    try {
+      return _messagesBox!.get(id);
+    } catch (e) {
+      print('Error getting message: $e');
+      return null;
+    }
   }
 
   Future<void> deleteMessage(String id) async {
-    await _messagesBox.delete(id);
+    if (!_isInitialized) await init();
+    await _messagesBox!.delete(id);
   }
 
   Future<void> clearAllMessages() async {
-    await _messagesBox.clear();
+    if (!_isInitialized) await init();
+    await _messagesBox!.clear();
   }
 
   /// Users operations
   Future<void> saveUser(User user) async {
-    await _usersBox.put(user.id, user);
+    if (!_isInitialized) await init();
+    await _usersBox!.put(user.id, user);
   }
 
   List<User> getAllUsers() {
-    return _usersBox.values.toList();
+    if (!_isInitialized || _usersBox == null) return [];
+    try {
+      return _usersBox!.values.toList();
+    } catch (e) {
+      print('Error getting all users: $e');
+      return [];
+    }
   }
 
   User? getUser(String id) {
-    return _usersBox.get(id);
+    if (!_isInitialized || _usersBox == null) return null;
+    try {
+      return _usersBox!.get(id);
+    } catch (e) {
+      print('Error getting user: $e');
+      return null;
+    }
   }
 
   Future<void> deleteUser(String id) async {
-    await _usersBox.delete(id);
+    if (!_isInitialized) await init();
+    await _usersBox!.delete(id);
   }
 
   /// Settings operations
   Future<void> saveSetting(String key, dynamic value) async {
-    await _settingsBox.put(key, value);
+    if (!_isInitialized) await init();
+    await _settingsBox!.put(key, value);
   }
 
   T? getSetting<T>(String key) {
-    return _settingsBox.get(key) as T?;
+    if (!_isInitialized || _settingsBox == null) return null;
+    try {
+      final value = _settingsBox!.get(key);
+      if (value == null) return null;
+
+      // Safe type casting with null checks
+      if (T == bool) {
+        if (value is bool) return value as T;
+        if (value is String) {
+          return (value.toLowerCase() == 'true') as T;
+        }
+        return null;
+      }
+
+      return value as T?;
+    } catch (e) {
+      print('Error getting setting $key: $e');
+      return null;
+    }
   }
 
   Future<void> deleteSetting(String key) async {
-    await _settingsBox.delete(key);
+    if (!_isInitialized) await init();
+    await _settingsBox!.delete(key);
   }
 
   /// Current user operations
   Future<void> saveCurrentUser(User user) async {
+    if (!_isInitialized) await init();
     await saveSetting('current_user_id', user.id);
     await saveUser(user);
   }
 
   User? getCurrentUser() {
-    final userId = getSetting<String>('current_user_id');
-    if (userId != null) {
-      return getUser(userId);
+    if (!_isInitialized) return null;
+    try {
+      final userId = getSetting<String>('current_user_id');
+      if (userId != null) {
+        return getUser(userId);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting current user: $e');
+      return null;
     }
-    return null;
   }
 
   /// Watch for changes
   Stream<BoxEvent> watchMessages() {
-    return _messagesBox.watch();
+    if (!_isInitialized || _messagesBox == null) return const Stream.empty();
+    return _messagesBox!.watch();
   }
 
   Stream<BoxEvent> watchUsers() {
-    return _usersBox.watch();
+    if (!_isInitialized || _usersBox == null) return const Stream.empty();
+    return _usersBox!.watch();
   }
 
   /// Close all boxes
   Future<void> close() async {
-    await _messagesBox.close();
-    await _usersBox.close();
-    await _settingsBox.close();
+    if (!_isInitialized) return;
+    await _messagesBox?.close();
+    await _usersBox?.close();
+    await _settingsBox?.close();
+    _messagesBox = null;
+    _usersBox = null;
+    _settingsBox = null;
+    _isInitialized = false;
   }
 }

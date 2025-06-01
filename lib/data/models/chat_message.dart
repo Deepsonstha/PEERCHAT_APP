@@ -23,10 +23,19 @@ class ChatMessage extends HiveObject {
   MessageType type;
 
   @HiveField(6)
-  bool isFromCurrentUser;
+  bool? isFromCurrentUser; // Made nullable for migration
 
   @HiveField(7)
   MessageStatus status;
+
+  @HiveField(8)
+  String? recipientId; // For private messages
+
+  @HiveField(9)
+  String? recipientName; // For private messages
+
+  @HiveField(10)
+  bool? isPrivate; // Made nullable for migration
 
   ChatMessage({
     required this.id,
@@ -35,9 +44,18 @@ class ChatMessage extends HiveObject {
     required this.content,
     required this.timestamp,
     this.type = MessageType.text,
-    this.isFromCurrentUser = false,
+    this.isFromCurrentUser,
     this.status = MessageStatus.sent,
+    this.recipientId,
+    this.recipientName,
+    this.isPrivate,
   });
+
+  // Getter for isFromCurrentUser with default value
+  bool get isFromCurrentUserValue => isFromCurrentUser ?? false;
+
+  // Getter for isPrivate with default value
+  bool get isPrivateValue => isPrivate ?? false;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
@@ -49,6 +67,9 @@ class ChatMessage extends HiveObject {
       type: MessageType.values.firstWhere((e) => e.toString() == 'MessageType.${json['type']}', orElse: () => MessageType.text),
       isFromCurrentUser: json['isFromCurrentUser'] ?? false,
       status: MessageStatus.values.firstWhere((e) => e.toString() == 'MessageStatus.${json['status']}', orElse: () => MessageStatus.sent),
+      recipientId: json['recipientId'],
+      recipientName: json['recipientName'],
+      isPrivate: json['isPrivate'] ?? false,
     );
   }
 
@@ -60,14 +81,17 @@ class ChatMessage extends HiveObject {
       'content': content,
       'timestamp': timestamp.toIso8601String(),
       'type': type.toString().split('.').last,
-      'isFromCurrentUser': isFromCurrentUser,
+      'isFromCurrentUser': isFromCurrentUserValue,
       'status': status.toString().split('.').last,
+      'recipientId': recipientId,
+      'recipientName': recipientName,
+      'isPrivate': isPrivateValue,
     };
   }
 
   @override
   String toString() {
-    return 'ChatMessage(id: $id, senderId: $senderId, content: $content, timestamp: $timestamp)';
+    return 'ChatMessage(id: $id, senderId: $senderId, content: $content, timestamp: $timestamp, isPrivate: $isPrivateValue)';
   }
 }
 

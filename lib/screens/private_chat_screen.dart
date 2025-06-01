@@ -112,10 +112,18 @@ class PrivateChatScreen extends StatelessWidget {
   }
 
   List<ChatMessage> _getPrivateMessages(List<ChatMessage> allMessages, String otherUserId, String? currentUserId) {
+    if (currentUserId == null) return [];
+
     return allMessages.where((message) {
-      // For now, show all messages in private chat
-      // TODO: Implement actual private messaging logic
-      return true;
+      if (!message.isPrivateValue) return false;
+
+      // Messages sent by current user to the other user
+      final sentToOther = message.senderId == currentUserId && message.recipientId == otherUserId;
+
+      // Messages received from the other user
+      final receivedFromOther = message.senderId == otherUserId && message.recipientId == currentUserId;
+
+      return sentToOther || receivedFromOther;
     }).toList();
   }
 
@@ -174,9 +182,8 @@ class PrivateChatScreen extends StatelessWidget {
   }
 
   void _sendPrivateMessage(String content, ChatController chatController) {
-    // TODO: Implement private message sending logic
-    // For now, send as regular message
-    chatController.sendMessage(content);
+    // Send private message using the new method
+    chatController.sendPrivateMessage(content, user);
   }
 
   String _formatLastSeen(DateTime lastSeen) {
@@ -443,7 +450,7 @@ class PrivateChatScreen extends StatelessWidget {
                       // TODO: Implement forward functionality
                     },
                   ),
-                  if (message.isFromCurrentUser)
+                  if (message.isFromCurrentUserValue)
                     ListTile(
                       leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                       title: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),

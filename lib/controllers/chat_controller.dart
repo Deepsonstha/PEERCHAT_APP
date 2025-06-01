@@ -8,9 +8,11 @@ import 'package:uuid/uuid.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/user.dart';
 import '../data/repositories/chat_repository.dart';
+import '../services/notification_service.dart';
 
 class ChatController extends GetxController {
   final ChatRepository _chatRepository = Get.find<ChatRepository>();
+  final NotificationService _notificationService = Get.find<NotificationService>();
 
   // Observable variables
   final RxList<ChatMessage> messages = <ChatMessage>[].obs;
@@ -167,9 +169,32 @@ class ChatController extends GetxController {
   /// Handle incoming message
   void _handleIncomingMessage(ChatMessage message) async {
     try {
-      // Mark as not from current user if it's from someone else
-      if (currentUser.value != null && message.senderId != currentUser.value!.id) {
-        message.isFromCurrentUser = false;
+      // Mark message as not from current user (since it's received)
+      message.isFromCurrentUser = false;
+
+      // Add to messages list
+      messages.add(message);
+
+      // Check if it's a private message for current user
+      if (message.isPrivateValue && message.recipientId == currentUser.value!.id) {
+        // Add to private messages
+        final privateMessages = messages.where((m) => m.isPrivateValue && m.recipientId == currentUser.value!.id).toList();
+        privateMessages.add(message);
+        messages.refresh();
+      } else if (!message.isPrivateValue && message.type != MessageType.system) {
+        // Find the sender user for notification
+        final sender = onlineUsers.firstWhereOrNull((user) => user.id == message.senderId);
+
+        if (sender != null) {
+          // Show notification based on message type
+          if (message.isPrivateValue && message.recipientId == currentUser.value!.id) {
+            // Private message notification
+            await _notificationService.showPrivateMessageNotification(message, sender);
+          } else if (!message.isPrivateValue && message.type != MessageType.system) {
+            // Group message notification (only if not a system message)
+            await _notificationService.showGroupMessageNotification(message, sender);
+          }
+        }
       }
 
       // Save to local storage
@@ -293,6 +318,7 @@ class ChatController extends GetxController {
         type: MessageType.text,
         isFromCurrentUser: true,
         status: MessageStatus.sending,
+        isPrivate: false, // Group message
       );
 
       // Add to local list immediately
@@ -321,6 +347,58 @@ class ChatController extends GetxController {
       Get.snackbar(
         'Send Failed',
         'Failed to send message: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange.withOpacity(0.2),
+        colorText: Colors.orange,
+      );
+    }
+  }
+
+  /// Send a private message to a specific user
+  Future<void> sendPrivateMessage(String content, User recipient) async {
+    if (content.trim().isEmpty || currentUser.value == null) return;
+
+    try {
+      final message = ChatMessage(
+        id: _uuid.v4(),
+        senderId: currentUser.value!.id,
+        senderName: currentUser.value!.name,
+        content: content.trim(),
+        timestamp: DateTime.now(),
+        type: MessageType.text,
+        isFromCurrentUser: true,
+        status: MessageStatus.sending,
+        isPrivate: true,
+        recipientId: recipient.id,
+        recipientName: recipient.name,
+      );
+
+      // Add to local list immediately
+      messages.add(message);
+      _sortMessages();
+
+      // Send through repository
+      await _chatRepository.sendMessage(message);
+
+      // Update status to sent
+      final index = messages.indexWhere((m) => m.id == message.id);
+      if (index != -1) {
+        messages[index].status = MessageStatus.sent;
+        messages.refresh();
+      }
+
+      log('Private message sent to ${recipient.name}: ${message.content}');
+    } catch (e) {
+      log('Error sending private message: $e');
+
+      // Update status to failed
+      final failedMessage = messages.lastWhere((m) => m.content == content.trim());
+      failedMessage.status = MessageStatus.failed;
+      messages.refresh();
+
+      Get.snackbar(
+        'Send Failed',
+        'Failed to send private message: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.orange.withOpacity(0.2),
         colorText: Colors.orange,
@@ -463,6 +541,59 @@ class ChatController extends GetxController {
     }
 
     return baseInfo;
+  }
+
+  /// Get notification settings
+  Map<String, bool> getNotificationSettings() {
+    return _notificationService.getNotificationSettings();
+  }
+
+  /// Update notification settings
+  void updateNotificationSettings({bool? notificationsEnabled, bool? soundEnabled, bool? vibrationEnabled, bool? privateMessageNotifications}) {
+    _notificationService.updateNotificationSettings(
+      notificationsEnabled: notificationsEnabled,
+      soundEnabled: soundEnabled,
+      vibrationEnabled: vibrationEnabled,
+      privateMessageNotifications: privateMessageNotifications,
+    );
+  }
+
+  /// Get private messages between current user and another user
+  List<ChatMessage> getPrivateMessages(String otherUserId) {
+    if (currentUser.value == null) return [];
+
+    return messages.where((message) {
+      if (!message.isPrivateValue) return false;
+
+      // Messages sent by current user to the other user
+      final sentToOther = message.senderId == currentUser.value!.id && message.recipientId == otherUserId;
+
+      // Messages received from the other user
+      final receivedFromOther = message.senderId == otherUserId && message.recipientId == currentUser.value!.id;
+
+      return sentToOther || receivedFromOther;
+    }).toList();
+  }
+
+  /// Clear private messages with a specific user
+  Future<void> clearPrivateMessages(String otherUserId) async {
+    try {
+      final privateMessages = getPrivateMessages(otherUserId);
+
+      for (final message in privateMessages) {
+        await _chatRepository.deleteMessage(message.id);
+        messages.removeWhere((m) => m.id == message.id);
+      }
+
+      log('Private messages cleared with user: $otherUserId');
+    } catch (e) {
+      log('Error clearing private messages: $e');
+    }
+  }
+
+  /// Check if notifications are enabled
+  Future<bool> areNotificationsEnabled() async {
+    return await _notificationService.areNotificationsEnabled();
   }
 
   @override

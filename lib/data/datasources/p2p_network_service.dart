@@ -145,7 +145,7 @@ class P2PNetworkService {
     }
   }
 
-  /// Send a chat message
+  /// Send message to all users or specific user for private messages
   Future<void> sendMessage(ChatMessage message) async {
     if (!isConnected || _currentUser == null) {
       throw Exception('P2P network not connected');
@@ -162,14 +162,31 @@ class P2PNetworkService {
       final jsonData = jsonEncode(data);
       final bytes = utf8.encode(jsonData);
 
-      // Send to all discovered users
-      for (final user in _discoveredUsers.values) {
-        if (user.id != _currentUser!.id) {
-          await _sendToUser(bytes, user);
+      if (message.isPrivateValue && message.recipientId != null) {
+        // Send private message only to the intended recipient
+        User? recipient;
+        for (final user in _discoveredUsers.values) {
+          if (user.id == message.recipientId) {
+            recipient = user;
+            break;
+          }
         }
-      }
 
-      log('Message sent: ${message.content}');
+        if (recipient != null) {
+          await _sendToUser(bytes, recipient);
+          log('Private message sent to ${recipient.name}: ${message.content}');
+        } else {
+          throw Exception('Recipient not found or offline');
+        }
+      } else {
+        // Send group message to all discovered users
+        for (final user in _discoveredUsers.values) {
+          if (user.id != _currentUser!.id) {
+            await _sendToUser(bytes, user);
+          }
+        }
+        log('Group message sent: ${message.content}');
+      }
     } catch (e) {
       log('Error sending message: $e');
       rethrow;
@@ -431,13 +448,24 @@ class P2PNetworkService {
           // Don't process our own messages
           if (_currentUser != null && sender.id == _currentUser!.id) return;
 
+          // For private messages, check if we are the intended recipient
+          if (message.isPrivateValue) {
+            if (_currentUser == null || message.recipientId != _currentUser!.id) {
+              // This private message is not for us, ignore it
+              log('Ignored private message not intended for us from ${sender.name}');
+              return;
+            }
+            log('Received private message from ${sender.name}: ${message.content}');
+          } else {
+            log('Received group message from ${sender.name}: ${message.content}');
+          }
+
           // Update sender's IP
           sender.ipAddress = address.address;
           _handleUserDiscovered(sender);
 
           // Emit message
           _messageController.add(message);
-          log('Received message from ${sender.name}: ${message.content}');
         }
       }
     } catch (e) {

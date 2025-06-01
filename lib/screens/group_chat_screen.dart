@@ -209,7 +209,7 @@ class GroupChatScreen extends StatelessWidget {
       message: message,
       showSenderInfo: showSenderInfo,
       onLongPress: () => _showMessageOptions(context, message, chatController),
-      onSenderTap: message.isFromCurrentUser ? null : () => _showSenderOptions(context, message, chatController),
+      onSenderTap: message.isFromCurrentUserValue ? null : () => _showSenderOptions(context, message, chatController),
     );
   }
 
@@ -363,7 +363,7 @@ class GroupChatScreen extends StatelessWidget {
                       // TODO: Implement copy functionality
                     },
                   ),
-                  if (message.isFromCurrentUser)
+                  if (message.isFromCurrentUserValue)
                     ListTile(
                       leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                       title: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),

@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'bindings/app_bindings.dart';
 import 'controllers/chat_controller.dart';
+import 'data/datasources/local_storage_service.dart';
 import 'data/models/chat_message.dart';
 import 'data/models/user.dart';
 import 'screens/all_users_screen.dart';
@@ -99,11 +100,21 @@ class _AppInitializerState extends State<AppInitializer> {
       // Wait for GetX bindings to be ready
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Get the chat controller
+      // Initialize LocalStorageService first
+      final localStorageService = Get.find<LocalStorageService>();
+      await localStorageService.init();
+      print('LocalStorageService pre-initialized');
+
+      // Get the chat controller and ensure it's initialized
       final chatController = Get.find<ChatController>();
 
-      // Wait for controller initialization
-      await chatController.initializeIfNeeded();
+      // Wait for controller initialization with timeout
+      await chatController.initializeIfNeeded().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print('Controller initialization timed out');
+        },
+      );
 
       // Check if user exists
       if (chatController.currentUser.value == null) {
@@ -114,6 +125,7 @@ class _AppInitializerState extends State<AppInitializer> {
         Get.offNamed('/home');
       }
     } catch (e) {
+      print('Error during app initialization: $e');
       // Navigate to welcome screen as fallback
       Get.offNamed('/welcome');
     }

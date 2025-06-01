@@ -28,6 +28,10 @@ class SettingsScreen extends StatelessWidget {
           _buildAppearanceSection(context),
           const SizedBox(height: 24),
 
+          // Notification Section
+          _buildNotificationSection(context, chatController),
+          const SizedBox(height: 24),
+
           // Network Section
           _buildNetworkSection(context, chatController),
           const SizedBox(height: 24),
@@ -192,6 +196,105 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildNotificationSection(BuildContext context, ChatController chatController) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Notifications', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: colorScheme.primary)),
+          const SizedBox(height: 16),
+
+          Obx(() {
+            final settings = chatController.getNotificationSettings();
+
+            return Column(
+              children: [
+                // General Notifications
+                _buildNotificationToggle(
+                  context,
+                  Icons.notifications,
+                  'Notifications',
+                  'Enable all notifications',
+                  settings['notificationsEnabled'] ?? true,
+                  (value) => chatController.updateNotificationSettings(notificationsEnabled: value),
+                ),
+                const SizedBox(height: 16),
+
+                // Private Message Notifications
+                _buildNotificationToggle(
+                  context,
+                  Icons.message,
+                  'Private Messages',
+                  'Get notified of private messages',
+                  settings['privateMessageNotifications'] ?? true,
+                  (value) => chatController.updateNotificationSettings(privateMessageNotifications: value),
+                ),
+                const SizedBox(height: 16),
+
+                // Sound
+                _buildNotificationToggle(
+                  context,
+                  Icons.volume_up,
+                  'Sound',
+                  'Play notification sounds',
+                  settings['soundEnabled'] ?? true,
+                  (value) => chatController.updateNotificationSettings(soundEnabled: value),
+                ),
+                const SizedBox(height: 16),
+
+                // Vibration
+                _buildNotificationToggle(
+                  context,
+                  Icons.vibration,
+                  'Vibration',
+                  'Vibrate for notifications',
+                  settings['vibrationEnabled'] ?? true,
+                  (value) => chatController.updateNotificationSettings(vibrationEnabled: value),
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationToggle(BuildContext context, IconData icon, String title, String subtitle, bool value, Function(bool) onChanged) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: colorScheme.primaryContainer.withOpacity(0.3), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, color: colorScheme.primary),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+              Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+            ],
+          ),
+        ),
+        Switch(value: value, onChanged: onChanged),
+      ],
     );
   }
 

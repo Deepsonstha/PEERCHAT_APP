@@ -42,6 +42,9 @@ dependencies:
   network_info_plus: ^4.1.0
   udp: ^5.0.3
 
+  # Notifications
+  flutter_local_notifications: ^17.2.2
+
   # UI
   cupertino_icons: ^1.0.8
 

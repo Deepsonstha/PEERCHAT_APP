@@ -23,15 +23,18 @@ class ChatMessageAdapter extends TypeAdapter<ChatMessage> {
       content: fields[3] as String,
       timestamp: fields[4] as DateTime,
       type: fields[5] as MessageType,
-      isFromCurrentUser: fields[6] as bool,
+      isFromCurrentUser: fields[6] as bool?,
       status: fields[7] as MessageStatus,
+      recipientId: fields[8] as String?,
+      recipientName: fields[9] as String?,
+      isPrivate: fields[10] as bool?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatMessage obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +50,13 @@ class ChatMessageAdapter extends TypeAdapter<ChatMessage> {
       ..writeByte(6)
       ..write(obj.isFromCurrentUser)
       ..writeByte(7)
-      ..write(obj.status);
+      ..write(obj.status)
+      ..writeByte(8)
+      ..write(obj.recipientId)
+      ..writeByte(9)
+      ..write(obj.recipientName)
+      ..writeByte(10)
+      ..write(obj.isPrivate);
   }
 
   @override

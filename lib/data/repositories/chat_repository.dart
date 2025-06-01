@@ -173,14 +173,9 @@ class ChatRepository {
     }
   }
 
-  /// Get scanning status information
+  /// Get scanning information
   Map<String, dynamic> getScanningInfo() {
-    try {
-      return _networkService.getScanningInfo();
-    } catch (e) {
-      log('Error getting scanning info: $e');
-      return {'scanningMode': 'unknown', 'error': e.toString()};
-    }
+    return _networkService.getScanningInfo();
   }
 
   /// Get network information

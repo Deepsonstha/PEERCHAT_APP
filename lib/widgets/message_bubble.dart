@@ -19,10 +19,10 @@ class MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Row(
-        mainAxisAlignment: message.isFromCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: message.isFromCurrentUserValue ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!message.isFromCurrentUser && showSenderInfo) ...[
+          if (!message.isFromCurrentUserValue && showSenderInfo) ...[
             GestureDetector(onTap: onSenderTap, child: _buildAvatar(context)),
             const SizedBox(width: 8.0),
           ],
@@ -41,7 +41,7 @@ class MessageBubble extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (!message.isFromCurrentUser && message.type != MessageType.system && showSenderInfo)
+                    if (!message.isFromCurrentUserValue && message.type != MessageType.system && showSenderInfo)
                       GestureDetector(onTap: onSenderTap, child: _buildSenderName(theme)),
                     _buildMessageContent(theme),
                     const SizedBox(height: 4.0),
@@ -51,7 +51,7 @@ class MessageBubble extends StatelessWidget {
               ),
             ),
           ),
-          if (message.isFromCurrentUser) ...[const SizedBox(width: 8.0), _buildAvatar(context)],
+          if (message.isFromCurrentUserValue) ...[const SizedBox(width: 8.0), _buildAvatar(context)],
         ],
       ),
     );
@@ -71,11 +71,11 @@ class MessageBubble extends StatelessWidget {
 
     return CircleAvatar(
       radius: 16,
-      backgroundColor: message.isFromCurrentUser ? colorScheme.primary : colorScheme.secondary,
+      backgroundColor: message.isFromCurrentUserValue ? colorScheme.primary : colorScheme.secondary,
       child: Text(
         message.senderName.isNotEmpty ? message.senderName[0].toUpperCase() : '?',
         style: TextStyle(
-          color: message.isFromCurrentUser ? colorScheme.onPrimary : colorScheme.onSecondary,
+          color: message.isFromCurrentUserValue ? colorScheme.onPrimary : colorScheme.onSecondary,
           fontSize: 14,
           fontWeight: FontWeight.bold,
         ),
@@ -97,7 +97,7 @@ class MessageBubble extends StatelessWidget {
     final textColor =
         message.type == MessageType.system
             ? theme.colorScheme.onSurfaceVariant
-            : message.isFromCurrentUser
+            : message.isFromCurrentUserValue
             ? theme.colorScheme.onPrimary
             : theme.colorScheme.onSurface;
 
@@ -110,13 +110,13 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildMessageInfo(ThemeData theme) {
-    final infoColor = message.isFromCurrentUser ? theme.colorScheme.onPrimary.withOpacity(0.7) : theme.colorScheme.onSurfaceVariant;
+    final infoColor = message.isFromCurrentUserValue ? theme.colorScheme.onPrimary.withOpacity(0.7) : theme.colorScheme.onSurfaceVariant;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(DateFormat('HH:mm').format(message.timestamp), style: theme.textTheme.labelSmall?.copyWith(color: infoColor, fontSize: 11)),
-        if (message.isFromCurrentUser) ...[const SizedBox(width: 4.0), _buildMessageStatusIcon(theme, infoColor)],
+        if (message.isFromCurrentUserValue) ...[const SizedBox(width: 4.0), _buildMessageStatusIcon(theme, infoColor)],
       ],
     );
   }
@@ -151,7 +151,7 @@ class MessageBubble extends StatelessWidget {
       return colorScheme.surfaceContainerHighest.withOpacity(0.5);
     }
 
-    return message.isFromCurrentUser ? colorScheme.primary : colorScheme.surface;
+    return message.isFromCurrentUserValue ? colorScheme.primary : colorScheme.surface;
   }
 
   BorderRadius _getBorderRadius() {
@@ -165,8 +165,8 @@ class MessageBubble extends StatelessWidget {
     return BorderRadius.only(
       topLeft: radius,
       topRight: radius,
-      bottomLeft: message.isFromCurrentUser ? radius : smallRadius,
-      bottomRight: message.isFromCurrentUser ? smallRadius : radius,
+      bottomLeft: message.isFromCurrentUserValue ? radius : smallRadius,
+      bottomRight: message.isFromCurrentUserValue ? smallRadius : radius,
     );
   }
 }
