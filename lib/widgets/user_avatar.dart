@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 
 import '../data/models/user.dart';
@@ -29,14 +31,8 @@ class UserAvatar extends StatelessWidget {
             child: CircleAvatar(
               radius: size / 2,
               backgroundColor: _getUserColor(user?.id ?? '', colorScheme),
-              backgroundImage: user?.avatar != null && user!.avatar!.isNotEmpty ? NetworkImage(user!.avatar!) : null,
-              child:
-                  user?.avatar == null || user!.avatar!.isEmpty
-                      ? Text(
-                        _getInitials(user?.name ?? '?'),
-                        style: TextStyle(color: Colors.white, fontSize: size * 0.4, fontWeight: FontWeight.bold),
-                      )
-                      : null,
+              backgroundImage: _isNetworkImage(user?.avatar) ? NetworkImage(user!.avatar!) : null,
+              child: _getAvatarChild(),
             ),
           ),
 
@@ -58,6 +54,73 @@ class UserAvatar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget? _getAvatarChild() {
+    final avatar = user?.avatar;
+
+    // Debug logging
+    log('UserAvatar: Processing avatar = "$avatar" for user ${user?.name}');
+
+    if (avatar == null || avatar.isEmpty) {
+      // Show initials when no avatar
+      log('UserAvatar: No avatar, showing initials');
+      return Text(_getInitials(user?.name ?? '?'), style: TextStyle(color: Colors.white, fontSize: size * 0.4, fontWeight: FontWeight.bold));
+    }
+
+    if (_isEmoji(avatar)) {
+      // Show emoji avatar
+      log('UserAvatar: Detected emoji avatar: "$avatar"');
+      return Text(avatar, style: TextStyle(fontSize: size * 0.6));
+    }
+
+    if (_isNetworkImage(avatar)) {
+      // Network image will be shown via backgroundImage
+      log('UserAvatar: Detected network image: "$avatar"');
+      return null;
+    }
+
+    // Fallback to initials if avatar format is unknown
+    log('UserAvatar: Unknown avatar format, showing initials');
+    return Text(_getInitials(user?.name ?? '?'), style: TextStyle(color: Colors.white, fontSize: size * 0.4, fontWeight: FontWeight.bold));
+  }
+
+  bool _isEmoji(String? text) {
+    if (text == null || text.isEmpty) return false;
+
+    log('UserAvatar: Checking if "$text" is emoji');
+
+    // First, check for common emoji patterns
+    final emojiRegex = RegExp(
+      r'[\u{1F600}-\u{1F64F}]|' // Emoticons
+      r'[\u{1F300}-\u{1F5FF}]|' // Misc Symbols and Pictographs
+      r'[\u{1F680}-\u{1F6FF}]|' // Transport and Map Symbols
+      r'[\u{1F1E0}-\u{1F1FF}]|' // Regional Indicator Symbols
+      r'[\u{2600}-\u{26FF}]|' // Misc symbols
+      r'[\u{2700}-\u{27BF}]|' // Dingbats
+      r'[\u{1F900}-\u{1F9FF}]|' // Supplemental Symbols and Pictographs
+      r'[\u{1F018}-\u{1F270}]', // Various symbols
+      unicode: true,
+    );
+
+    if (emojiRegex.hasMatch(text)) {
+      log('UserAvatar: Regex detected emoji in "$text"');
+      return true;
+    }
+
+    // Check if it's a short string that doesn't look like a URL or file path
+    if (text.length <= 4 && !text.contains('.') && !text.contains('/') && !text.contains('http') && !text.contains('www')) {
+      log('UserAvatar: Treating short non-URL string as emoji: "$text"');
+      return true;
+    }
+
+    log('UserAvatar: Not detected as emoji: "$text"');
+    return false;
+  }
+
+  bool _isNetworkImage(String? avatar) {
+    if (avatar == null || avatar.isEmpty) return false;
+    return avatar.startsWith('http://') || avatar.startsWith('https://');
   }
 
   String _getInitials(String name) {

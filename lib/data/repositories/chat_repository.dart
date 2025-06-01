@@ -143,6 +143,10 @@ class ChatRepository {
   Future<void> updateCurrentUser(User user) async {
     try {
       await _localStorageService.saveCurrentUser(user);
+
+      // Also update the network service's current user and broadcast changes
+      _networkService.updateCurrentUser(user);
+
       log('Current user updated: ${user.name}');
     } catch (e) {
       log('Error updating current user: $e');

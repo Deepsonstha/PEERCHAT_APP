@@ -110,6 +110,42 @@ class SettingsScreen extends StatelessWidget {
 
           // User ID
           Obx(() => _buildInfoRow(context, Icons.fingerprint, 'User ID', chatController.currentUser.value?.id ?? 'Unknown', isMonospace: true)),
+
+          const SizedBox(height: 12),
+
+          // Debug: Current Avatar Value
+          Obx(() => _buildInfoRow(context, Icons.face, 'Current Avatar', chatController.currentUser.value?.avatar ?? 'None')),
+
+          const SizedBox(height: 16),
+
+          // Quick emoji test buttons
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  chatController.updateUserAvatar('😀');
+                  Get.snackbar('Debug', 'Set avatar to 😀', snackPosition: SnackPosition.BOTTOM);
+                },
+                child: Text('😀'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  chatController.updateUserAvatar('🎸');
+                  Get.snackbar('Debug', 'Set avatar to 🎸', snackPosition: SnackPosition.BOTTOM);
+                },
+                child: Text('🎸'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  chatController.updateUserAvatar('');
+                  Get.snackbar('Debug', 'Cleared avatar', snackPosition: SnackPosition.BOTTOM);
+                },
+                child: Text('Clear'),
+              ),
+            ],
+          ),
         ],
       ),
     );

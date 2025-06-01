@@ -171,7 +171,6 @@ class HomeScreen extends StatelessWidget {
   Widget _buildOnlineUsersSection(BuildContext context, ChatController chatController) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     if (chatController.onlineUsers.isEmpty) {
       return Center(
@@ -292,7 +291,6 @@ class HomeScreen extends StatelessWidget {
   Widget _buildActionButtons(BuildContext context, ChatController chatController) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(16),

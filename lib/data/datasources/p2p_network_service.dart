@@ -165,6 +165,23 @@ class P2PNetworkService {
     }
   }
 
+  /// Update current user and broadcast changes immediately
+  void updateCurrentUser(User updatedUser) {
+    if (!isConnected) return;
+
+    try {
+      _currentUser = updatedUser;
+
+      // Broadcast updated user info immediately
+      final data = {'type': 'heartbeat', 'user': _currentUser!.toJson(), 'timestamp': DateTime.now().millisecondsSinceEpoch};
+      _broadcastData(data);
+
+      log('User updated and broadcasted: ${updatedUser.name}');
+    } catch (e) {
+      log('Error updating current user: $e');
+    }
+  }
+
   /// Start periodic discovery broadcasts
   void _startDiscovery() {
     _discoveryTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
