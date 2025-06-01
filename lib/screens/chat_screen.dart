@@ -51,6 +51,7 @@ class ChatScreen extends StatelessWidget {
             itemBuilder:
                 (context) => [
                   const PopupMenuItem(value: 'connect', child: Row(children: [Icon(Icons.wifi), SizedBox(width: 8), Text('Start P2P Chat')])),
+                  const PopupMenuItem(value: 'forceScan', child: Row(children: [Icon(Icons.radar), SizedBox(width: 8), Text('Force Scan')])),
                   const PopupMenuItem(value: 'users', child: Row(children: [Icon(Icons.people), SizedBox(width: 8), Text('View All Users')])),
                   const PopupMenuItem(value: 'disconnect', child: Row(children: [Icon(Icons.wifi_off), SizedBox(width: 8), Text('Stop P2P')])),
                   const PopupMenuItem(value: 'clear', child: Row(children: [Icon(Icons.clear_all), SizedBox(width: 8), Text('Clear Messages')])),
@@ -117,6 +118,9 @@ class ChatScreen extends StatelessWidget {
     switch (action) {
       case 'connect':
         _showConnectDialog(context, chatController);
+        break;
+      case 'forceScan':
+        _showForceScanDialog(context, chatController);
         break;
       case 'users':
         _showAllUsers(context, chatController);
@@ -197,6 +201,70 @@ class ChatScreen extends StatelessWidget {
                   }
                 },
                 child: const Text('Start P2P Chat'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showForceScanDialog(BuildContext context, ChatController chatController) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [Icon(Icons.radar, color: Theme.of(context).colorScheme.secondary), const SizedBox(width: 8), const Text('Force Scan')],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Activate super fast device discovery to quickly find nearby users.'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.speed, size: 16, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text('Fast Scanning Features:', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '• Burst scanning: 100ms intervals\n• Parallel broadcasts for better coverage\n• Immediate response to discovery requests\n• Adaptive scanning based on activity',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  chatController.forceScan();
+                  Get.snackbar(
+                    'Fast Scanning Active',
+                    'Super fast device discovery activated! Looking for nearby devices...',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    colorText: Theme.of(context).colorScheme.secondary,
+                    icon: Icon(Icons.radar, color: Theme.of(context).colorScheme.secondary),
+                    duration: const Duration(seconds: 3),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                ),
+                child: const Text('Activate'),
               ),
             ],
           ),

@@ -280,6 +280,30 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+
+                // Fast Scanning Actions
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: !chatController.isConnected.value ? null : () => _forceScan(context, chatController),
+                        icon: const Icon(Icons.radar),
+                        label: const Text('Force Scan'),
+                        style: ElevatedButton.styleFrom(backgroundColor: colorScheme.secondary, foregroundColor: colorScheme.onSecondary),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: !chatController.isConnected.value ? null : () => _showScanningInfo(context, chatController),
+                        icon: const Icon(Icons.info_outline),
+                        label: const Text('Scan Info'),
+                        style: ElevatedButton.styleFrom(backgroundColor: colorScheme.tertiary, foregroundColor: colorScheme.onTertiary),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             );
           }),
@@ -542,6 +566,109 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
+    );
+  }
+
+  void _forceScan(BuildContext context, ChatController chatController) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [Icon(Icons.radar, color: Theme.of(context).colorScheme.secondary), const SizedBox(width: 8), const Text('Force Scan')],
+            ),
+            content: const Text('This will trigger immediate super fast device discovery. Use this to quickly find nearby devices.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  chatController.forceScan();
+                  Get.snackbar(
+                    'Fast Scanning',
+                    'Super fast device discovery activated!',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    colorText: Theme.of(context).colorScheme.secondary,
+                    icon: Icon(Icons.radar, color: Theme.of(context).colorScheme.secondary),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                ),
+                child: const Text('Force Scan'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showScanningInfo(BuildContext context, ChatController chatController) {
+    final networkInfo = chatController.getNetworkInfo();
+    final scanningMode = networkInfo['scanningMode'] ?? 'unknown';
+    final isFastScanning = networkInfo['isFastScanning'] ?? false;
+    final isBurstScanning = networkInfo['isBurstScanning'] ?? false;
+    final discoveredUsers = networkInfo['discoveredUsers'] ?? 0;
+    final lastNewUserFound = networkInfo['lastNewUserFound'];
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.info_outline, color: Theme.of(context).colorScheme.tertiary),
+                const SizedBox(width: 8),
+                const Text('Scanning Information'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildScanInfoRow(context, 'Scanning Mode', scanningMode.toString().toUpperCase()),
+                const SizedBox(height: 8),
+                _buildScanInfoRow(context, 'Fast Scanning', isFastScanning ? 'ACTIVE' : 'INACTIVE'),
+                const SizedBox(height: 8),
+                _buildScanInfoRow(context, 'Burst Scanning', isBurstScanning ? 'ACTIVE' : 'INACTIVE'),
+                const SizedBox(height: 8),
+                _buildScanInfoRow(context, 'Discovered Users', discoveredUsers.toString()),
+                const SizedBox(height: 8),
+                _buildScanInfoRow(context, 'Last User Found', lastNewUserFound != null ? 'Recently' : 'None'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Scanning Modes:', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '• BURST: 100ms intervals (10 scans)\n• FAST: 500ms intervals\n• NORMAL: 2s intervals',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+          ),
+    );
+  }
+
+  Widget _buildScanInfoRow(BuildContext context, String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 

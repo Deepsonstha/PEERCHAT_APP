@@ -163,6 +163,26 @@ class ChatRepository {
     }
   }
 
+  /// Force immediate super fast scanning
+  void forceScan() {
+    try {
+      _networkService.forceScan();
+      log('Force scanning triggered');
+    } catch (e) {
+      log('Error triggering force scan: $e');
+    }
+  }
+
+  /// Get scanning status information
+  Map<String, dynamic> getScanningInfo() {
+    try {
+      return _networkService.getScanningInfo();
+    } catch (e) {
+      log('Error getting scanning info: $e');
+      return {'scanningMode': 'unknown', 'error': e.toString()};
+    }
+  }
+
   /// Get network information
   Map<String, dynamic> getNetworkInfo() {
     try {

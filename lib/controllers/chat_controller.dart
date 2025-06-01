@@ -392,23 +392,18 @@ class ChatController extends GetxController {
     return onlineUsers.any((user) => user.id == userId);
   }
 
-  /// Get network information
-  Map<String, dynamic> getNetworkInfo() {
-    return {
-      'isConnected': isConnected.value,
-      'userCount': onlineUsersCount,
-      'currentUser': currentUser.value?.toJson(),
-      'localIP': _chatRepository.isConnected ? 'Connected' : 'Disconnected',
-      'protocol': 'UDP P2P',
-      'discoveryPort': 8888,
-      'messagePort': 8889,
-    };
-  }
-
   /// Refresh user discovery
   void refreshUserDiscovery() {
     if (isConnected.value) {
       _chatRepository.requestOnlineUsers();
+    }
+  }
+
+  /// Force immediate super fast scanning
+  void forceScan() {
+    if (isConnected.value) {
+      _chatRepository.forceScan();
+      log('Force scanning triggered for immediate device discovery');
     }
   }
 
@@ -445,6 +440,29 @@ class ChatController extends GetxController {
       currentUser.value = updatedUser;
       _chatRepository.updateCurrentUser(updatedUser);
     }
+  }
+
+  /// Get network information
+  Map<String, dynamic> getNetworkInfo() {
+    final baseInfo = {
+      'isConnected': isConnected.value,
+      'userCount': onlineUsersCount,
+      'currentUser': currentUser.value?.toJson(),
+      'localIP': _chatRepository.isConnected ? 'Connected' : 'Disconnected',
+      'protocol': 'UDP P2P',
+      'discoveryPort': 8888,
+      'messagePort': 8889,
+    };
+
+    // Add scanning information if available
+    try {
+      final scanningInfo = _chatRepository.getScanningInfo();
+      baseInfo.addAll(scanningInfo);
+    } catch (e) {
+      log('Error getting scanning info: $e');
+    }
+
+    return baseInfo;
   }
 
   @override

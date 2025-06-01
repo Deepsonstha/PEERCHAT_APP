@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../controllers/chat_controller.dart';
 import '../data/models/user.dart';
 
 class AllUsersScreen extends StatelessWidget {
@@ -16,11 +17,13 @@ class AllUsersScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Connected Users (${users.length})'),
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
+        title: Obx(() => Text('Online Users (${users.length})')),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        actions: [IconButton(onPressed: () => _showNetworkInfo(context), icon: const Icon(Icons.info_outline), tooltip: 'Network Info')],
+        actions: [
+          IconButton(onPressed: () => _showNetworkInfo(context), icon: const Icon(Icons.info_outline), tooltip: 'Network Information'),
+          IconButton(onPressed: () => _refreshUsers(), icon: const Icon(Icons.refresh), tooltip: 'Refresh Users'),
+        ],
       ),
       body:
           users.isEmpty
@@ -44,6 +47,28 @@ class AllUsersScreen extends StatelessWidget {
                   ),
                 ],
               ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            onPressed: () => _forceScan(),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            foregroundColor: Theme.of(context).colorScheme.onSecondary,
+            heroTag: "forceScan",
+            tooltip: 'Force Scan',
+            child: const Icon(Icons.radar),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton(
+            onPressed: () => _refreshUsers(),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            heroTag: "refresh",
+            tooltip: 'Refresh',
+            child: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
     );
   }
 
@@ -376,6 +401,36 @@ class AllUsersScreen extends StatelessWidget {
             ),
             actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))],
           ),
+    );
+  }
+
+  void _forceScan() {
+    final chatController = Get.find<ChatController>();
+    chatController.forceScan();
+
+    Get.snackbar(
+      'Fast Scanning',
+      'Super fast device discovery activated!',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Theme.of(Get.context!).colorScheme.secondary.withOpacity(0.2),
+      colorText: Theme.of(Get.context!).colorScheme.secondary,
+      icon: Icon(Icons.radar, color: Theme.of(Get.context!).colorScheme.secondary),
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  void _refreshUsers() {
+    final chatController = Get.find<ChatController>();
+    chatController.refreshUserDiscovery();
+
+    Get.snackbar(
+      'Refreshing',
+      'Searching for nearby devices...',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Theme.of(Get.context!).colorScheme.primary.withOpacity(0.2),
+      colorText: Theme.of(Get.context!).colorScheme.primary,
+      icon: Icon(Icons.refresh, color: Theme.of(Get.context!).colorScheme.primary),
+      duration: const Duration(seconds: 1),
     );
   }
 }
